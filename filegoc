@@ -25,7 +25,7 @@
     #reader__scan_region img {
         opacity: 0.8 !important;
     }
-</style>
+    </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
@@ -40,37 +40,37 @@
             
             <!-- Màn hình hiển thị Tick (✓) hoặc Cross (✕) đè lên camera -->
             <div id="overlay" class="absolute inset-0 flex flex-col items-center justify-center hidden z-50 p-2">
-            <div id="overlay-icon" class="text-[10rem] leading-none font-black icon-overlay"></div>
-            <div id="overlay-msg" class="text-4xl sm:text-5xl font-black mt-1 text-center tracking-wider"></div>
-            <div id="overlay-detail" class="text-2xl font-black mt-2 text-center text-white leading-tight"></div>
+                <div id="overlay-icon" class="text-[10rem] leading-none font-black icon-overlay"></div>
+                <div id="overlay-msg" class="text-4xl sm:text-5xl font-black mt-1 text-center tracking-wider"></div>
+                <div id="overlay-detail" class="text-2xl font-black mt-2 text-center text-white leading-tight"></div>
             </div>
         </div>
 
         <!-- Khung Nhập Tay & Giọng Nói -->
-<div class="space-y-2 pt-1">
-    <div class="flex items-center gap-2 w-full">
-        <!-- Ô Nhập:  -->
-        <input type="text" id="manual-input" value="P" placeholder="Nhập phần số..." 
-            inputmode="numeric" pattern="[0-9]*"
-            class="flex-1 w-0 bg-slate-700 text-white px-3 py-2 rounded-lg text-base font-bold border border-slate-600 focus:outline-none focus:border-cyan-400">
-        
-        <!-- Nút Giọng nói -->
-        <button id="voice-btn" type="button" onclick="toggleVoiceRecognition()" title="Đọc Mã NV bằng giọng nói"
-            class="shrink-0 bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg border border-slate-600 text-cyan-400 flex items-center justify-center transition-colors active:scale-95">
-            <svg class="w-5 h-5 fill-current pointer-events-none" viewBox="0 0 24 24">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-            </svg>
-        </button>
-        
-        <!-- Nút Gửi:-->
-        <button onclick="handleManualSubmit()" 
-            class="shrink-0 bg-cyan-600 hover:bg-cyan-500 font-bold px-3.5 py-2 rounded-lg text-sm whitespace-nowrap transition-colors active:scale-95">
-            Gửi
-        </button>
-    </div>
-    <div id="voice-status" class="text-xs font-semibold text-center text-yellow-400 hidden">🔴 Đang nghe... Hãy đọc Mã NV</div>
-</div>
+        <div class="space-y-2 pt-1">
+            <div class="flex items-center gap-2 w-full">
+                <!-- Ô Nhập -->
+                <input type="text" id="manual-input" value="P" placeholder="Nhập phần số..." 
+                    inputmode="numeric" pattern="[0-9]*"
+                    class="flex-1 w-0 bg-slate-700 text-white px-3 py-2 rounded-lg text-base font-bold border border-slate-600 focus:outline-none focus:border-cyan-400">
+                
+                <!-- Nút Giọng nói -->
+                <button id="voice-btn" type="button" onclick="toggleVoiceRecognition()" title="Đọc Mã NV bằng giọng nói"
+                    class="shrink-0 bg-slate-700 hover:bg-slate-600 p-2.5 rounded-lg border border-slate-600 text-cyan-400 flex items-center justify-center transition-colors active:scale-95">
+                    <svg class="w-5 h-5 fill-current pointer-events-none" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
+                
+                <!-- Nút Gửi -->
+                <button onclick="handleManualSubmit()" 
+                    class="shrink-0 bg-cyan-600 hover:bg-cyan-500 font-bold px-3.5 py-2 rounded-lg text-sm whitespace-nowrap transition-colors active:scale-95">
+                    Gửi
+                </button>
+            </div>
+            <div id="voice-status" class="text-xs font-semibold text-center text-yellow-400 hidden">🔴 Đang nghe... Hãy đọc Mã NV</div>
+        </div>
 
         <div class="text-center text-xs text-slate-400">
             Đưa mã barcode trên thẻ nhân viên vào khung hình hoặc nhập mã trực tiếp
@@ -82,32 +82,48 @@
         
         let employeeDatabase = [];
         let isProcessing = false;
+        let activeJsonpScript = null;
 
-        // Fetch danh sách nhân viên từ Google Sheets
-       function fetchEmployees() {
-    const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-    const script = document.createElement('script');
+        // Fetch danh sách nhân viên từ Google Sheets bằng JSONP (Sửa tối ưu chống cache và xung đột)
+        function fetchEmployees() {
+            if (activeJsonpScript && activeJsonpScript.parentNode) {
+                activeJsonpScript.parentNode.removeChild(activeJsonpScript);
+            }
 
-    window[callbackName] = function(data) {
-        employeeDatabase = data;
-        document.getElementById('status-sync').innerText = `✓ Danh sách có ${employeeDatabase.length} nhân viên`;
-        document.getElementById('status-sync').className = "text-xs text-center text-green-400 font-medium py-1";
-        
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-    };
+            const callbackName = 'jsonp_cb_' + Date.now();
 
-    script.src = `${API_URL}?prefix=${callbackName}`;
-    script.onerror = function() {
-        document.getElementById('status-sync').innerText = '✗ Lỗi kết nối Google Sheets!';
-        document.getElementById('status-sync').className = "text-xs text-center text-red-400 font-medium py-1";
-        
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-    };
+            window[callbackName] = function(data) {
+                if (Array.isArray(data)) {
+                    employeeDatabase = data;
+                    const statusEl = document.getElementById('status-sync');
+                    statusEl.innerText = `✓ Danh sách có ${employeeDatabase.length} nhân viên`;
+                    statusEl.className = "text-xs text-center text-green-400 font-medium py-1";
+                }
+                cleanup();
+            };
 
-    document.body.appendChild(script);
-}
+            function cleanup() {
+                delete window[callbackName];
+                if (activeJsonpScript && activeJsonpScript.parentNode) {
+                    activeJsonpScript.parentNode.removeChild(activeJsonpScript);
+                    activeJsonpScript = null;
+                }
+            }
+
+            activeJsonpScript = document.createElement('script');
+            activeJsonpScript.src = `${API_URL}?prefix=${callbackName}&_t=${Date.now()}`;
+            
+            activeJsonpScript.onerror = function() {
+                const statusEl = document.getElementById('status-sync');
+                if (employeeDatabase.length === 0) {
+                    statusEl.innerText = '✗ Lỗi kết nối Google Sheets!';
+                    statusEl.className = "text-xs text-center text-red-400 font-medium py-1";
+                }
+                cleanup();
+            };
+
+            document.body.appendChild(activeJsonpScript);
+        }
 
         // Ghi lịch sử check-in vào Google Sheets
         async function logCheckin(logData) {
@@ -169,10 +185,8 @@
                     status: "Không hợp lệ"
                 });
             }
-            
-            fetchEmployees();
 
-            document.getElementById('manual-input').value = '';
+            document.getElementById('manual-input').value = 'P';
             
             setTimeout(() => {
                 overlay.classList.add('hidden');
@@ -228,12 +242,10 @@
 
             recognition.onresult = function(event) {
                 const rawSpeech = event.results[0][0].transcript;
-                
                 const digitsOnly = rawSpeech.replace(/\D/g, '');
 
                 if (digitsOnly) {
                     const finalEmployeeId = 'P' + digitsOnly;
-                    
                     document.getElementById('manual-input').value = finalEmployeeId;
                     processCheckin(finalEmployeeId);
                 } else {
@@ -273,27 +285,27 @@
             }
         }
 
+        const html5QrCode = new Html5Qrcode("reader");
 
-const html5QrCode = new Html5Qrcode("reader");
+        // Đảm bảo DOM đã load xong kích thước khung chứa trước khi bật Camera
+        window.addEventListener("DOMContentLoaded", () => {
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 15,
+                    qrbox: { width: 260, height: 160 },
+                    showTorchButtonIfSupported: true
+                },
+                onScanSuccess,
+                (errorMessage) => {
+                    // Lỗi quét khung hình bình thường
+                }
+            ).catch(err => {
+                console.error("Không thể mở Camera:", err);
+            });
+        });
 
-// Đảm bảo DOM đã load xong kích thước khung chứa trước khi bật Camera
-window.addEventListener("DOMContentLoaded", () => {
-    html5QrCode.start(
-        { facingMode: "environment" },
-        {
-            fps: 15,
-            qrbox: { width: 260, height: 160 },
-            showTorchButtonIfSupported: true
-        },
-        onScanSuccess,
-        (errorMessage) => {
-            // Lỗi quét khung hình bình thường
-        }
-    ).catch(err => {
-        console.error("Không thể mở Camera:", err);
-    });
-});
-
+        // Chỉ tải danh sách nhân viên 1 lần duy nhất khi vừa mở trang
         fetchEmployees();
     </script>
 </body>
