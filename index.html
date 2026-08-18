@@ -78,36 +78,23 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxekhSD0JtwHzIBMOmcArO6kHRIdY3JBky6B6TsYRB6_TcpylUpJxejjO5VA5ltACT5/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzZ1_8qSTTn2IhuFUcHj_-AhKGB5ElbV8Ev3-PtPXbhEuAw9q7KBVk37xLOSb0daxDu/exec"; 
         
         let employeeDatabase = [];
         let isProcessing = false;
 
         // Fetch danh sách nhân viên từ Google Sheets
-       function fetchEmployees() {
-    const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-    const script = document.createElement('script');
-
-    window[callbackName] = function(data) {
-        employeeDatabase = data;
-        document.getElementById('status-sync').innerText = `✓ Danh sách có ${employeeDatabase.length} nhân viên`;
-        document.getElementById('status-sync').className = "text-xs text-center text-green-400 font-medium py-1";
-        
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-    };
-
-    script.src = `${API_URL}?prefix=${callbackName}`;
-    script.onerror = function() {
-        document.getElementById('status-sync').innerText = '✗ Lỗi kết nối Google Sheets!';
-        document.getElementById('status-sync').className = "text-xs text-center text-red-400 font-medium py-1";
-        
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-    };
-
-    document.body.appendChild(script);
-}
+        async function fetchEmployees() {
+            try {
+                const res = await fetch(API_URL);
+                employeeDatabase = await res.json();
+                document.getElementById('status-sync').innerText = `✓ Danh sách có ${employeeDatabase.length} nhân viên`;
+                document.getElementById('status-sync').className = "text-xs text-center text-green-400 font-medium py-1";
+            } catch (err) {
+                document.getElementById('status-sync').innerText = '✗ Lỗi kết nối Google Sheets!';
+                document.getElementById('status-sync').className = "text-xs text-center text-red-400 font-medium py-1";
+            }
+        }
 
         // Ghi lịch sử check-in vào Google Sheets
         async function logCheckin(logData) {
